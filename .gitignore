@@ -1,5 +1,9 @@
-.pyc
-.pth
-.pkl
-.iml
-.xml
+*.pyc
+
+*.pth
+
+*.pkl
+
+*.iml
+
+*.xml
