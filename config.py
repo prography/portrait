@@ -30,8 +30,8 @@ parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam opt
 parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
 parser.add_argument('--resume_iters', type=int, default=None, help='resume training from this step')
 
-# Test configuration.
-parser.add_argument('--test_iters', type=int, default=5, help='test model from this step')
+# Test configuration
+parser.add_argument('--trained_G', type=str, default='', help='trained Generator model path')
 
 # Miscellaneous.
 parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])

@@ -1,5 +1,6 @@
 import os
 from trainer import Trainer
+from tester import Tester
 from dataloader import get_loader
 from torch.backends import cudnn
 from config import get_config
@@ -25,8 +26,9 @@ def main(config):
 
     if config.mode == 'train':
         trainer.train()
-    elif config.mode == 'test':
-        trainer.test()
+    elif config.mode == 'test' and config.trained_G != '':
+        tester = Tester(test_loader, config)
+        tester.test()
 
 if __name__ == '__main__':
     config = get_config()

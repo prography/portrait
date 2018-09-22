@@ -6,19 +6,17 @@ import torch.nn.functional as F
 import numpy as np
 import os
 import time
-import datetime
 
 from vis_tool import Visualizer
 
 class Trainer(object):
     """Solver for training and testing StarGAN."""
 
-    def __init__(self, train_loader, test_loader, config):
+    def __init__(self, train_loader, config):
         """Initialize configurations."""
 
         # Data loader.
         self.train_loader = train_loader
-        self.test_loader = test_loader
 
         # Model configurations.
         self.c_dim = config.c_dim
@@ -42,9 +40,6 @@ class Trainer(object):
         self.beta1 = config.beta1
         self.beta2 = config.beta2
         self.resume_iters = config.resume_iters
-
-        # Test configurations.
-        self.test_iters = config.test_iters
 
         # Miscellaneous.
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -295,26 +290,3 @@ class Trainer(object):
         torch.save(self.G.state_dict(), os.path.join(self.model_save_dir, 'finalG.pth'))
         torch.save(self.D.state_dict(), os.path.join(self.model_save_dir, 'finalD.pth'))
         print('Model saved!')
-
-    def test(self):
-        """Translate images using StarGAN trained on a single dataset."""
-        # Load the trained generator.
-        self.restore_model(self.test_iters)
-
-        with torch.no_grad():
-            for i, (x_real, c_org) in enumerate(self.test_loader):
-
-                # Prepare input images and target domain labels.
-                x_real = x_real.to(self.device)
-                c_trg_list = self.create_labels(c_org, self.c_dim)
-
-                # Translate images.
-                x_fake_list = [x_real]
-                for c_trg in c_trg_list:
-                    x_fake_list.append(self.G(x_real, c_trg))
-
-                # Save the translated images.
-                x_concat = torch.cat(x_fake_list, dim=3)
-                result_path = os.path.join(self.result_dir, '{}-images.jpg'.format(i + 1))
-                save_image(self.denorm(x_concat.data.cpu()), result_path, nrow=1, padding=0)
-                print('Saved real and fake images into {}...'.format(result_path))
