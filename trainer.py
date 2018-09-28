@@ -161,13 +161,15 @@ class Trainer(object):
         # Start training.
         print('Learning started!')
         start_time = time.time()
+
         for i in range(start_iters, self.num_iters):
             D_losses = []
             G_losses = []
 
-            # =================================================================================== #
-            #                             1. Preprocess input data                                #
-            # =================================================================================== #
+            # for step, (x_real, label_org) in enumerate(self.train_loader):
+                # =================================================================================== #
+                #                             1. Preprocess input data                                #
+                # =================================================================================== #
 
             # Fetch real images and labels.
             try:
@@ -253,7 +255,7 @@ class Trainer(object):
                 print("[%d/%d] time passes: %.3f G_loss:%.3f D_loss:%.3f"
                       % (i+1, self.num_iters, et, avg_G_loss, avg_D_loss))
                 self.vis.plot("Generator loss per %d epochs" % (self.log_step), avg_G_loss)
-                self.vis.plot("Discriminator loss per %d epochs" % (self.log_step), avg_D_loss)
+                self.vis.plot("Discriminator loss per %d steps" % (self.log_step), avg_D_loss)
 
                 G_losses.clear()
                 D_losses.clear()
