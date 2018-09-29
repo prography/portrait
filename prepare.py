@@ -1,6 +1,5 @@
-"""
-Image Parsing Error 해결
-"""
+"""영인 작성 Image Parsing Error 해결"""
+
 import os
 import PIL.Image as pil
 

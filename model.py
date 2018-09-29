@@ -1,10 +1,11 @@
+"""완수 작성 network model"""
+
 import torch
 import torch.nn as nn
 import numpy as np
 
-class ResidualBlock(nn.Module):
-    """Residual Block with instance normalization."""
 
+class ResidualBlock(nn.Module):
     def __init__(self, dim_in, dim_out):
         super(ResidualBlock, self).__init__()
         self.main = nn.Sequential(
@@ -12,16 +13,13 @@ class ResidualBlock(nn.Module):
             nn.InstanceNorm2d(dim_out, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.Conv2d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.InstanceNorm2d(dim_out, affine=True, track_running_stats=True)
-        )
+            nn.InstanceNorm2d(dim_out, affine=True, track_running_stats=True))
 
     def forward(self, x):
         return x + self.main(x)
 
 
 class Generator(nn.Module):
-    """Generator network."""
-
     def __init__(self, conv_dim=64, c_dim=5, repeat_num=6):
         super(Generator, self).__init__()
 
@@ -30,28 +28,17 @@ class Generator(nn.Module):
         layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True))
         layers.append(nn.ReLU(inplace=True))
 
-        """
-        down-sampling layers (encoder layers)
-        크고 얇은 이미지를 작고 깊은 이미지로 conv 연산 수행
-        """
         curr_dim = conv_dim
-        for i in range(2):
+        for _ in range(2):
             layers.append(nn.Conv2d(curr_dim, curr_dim * 2, kernel_size=4, stride=2, padding=1, bias=False))
             layers.append(nn.InstanceNorm2d(curr_dim * 2, affine=True, track_running_stats=True))
             layers.append(nn.ReLU(inplace=True))
             curr_dim = curr_dim * 2
 
-        """
-        bottleneck layer
-        """
-        for i in range(repeat_num):
+        for _ in range(repeat_num):
             layers.append(ResidualBlock(dim_in=curr_dim, dim_out=curr_dim))
 
-        """
-        up-sampling layers (decoder layers)
-        작고 깊은 이미지를 크고 얇은 이미지로(reconstruct) deconv 연산 수행
-        """
-        for i in range(2):
+        for _ in range(2):
             layers.append(nn.ConvTranspose2d(curr_dim, curr_dim // 2, kernel_size=4, stride=2, padding=1, bias=False))
             layers.append(nn.InstanceNorm2d(curr_dim // 2, affine=True, track_running_stats=True))
             layers.append(nn.ReLU(inplace=True))
@@ -62,7 +49,6 @@ class Generator(nn.Module):
         self.main = nn.Sequential(*layers)
 
     def forward(self, x, c):
-        # Replicate spatially and concatenate domain information.
         c = c.view(c.size(0), c.size(1), 1, 1)
         c = c.repeat(1, 1, x.size(2), x.size(3))
         x = torch.cat([x, c], dim=1)
@@ -70,8 +56,6 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    """Discriminator network with PatchGAN."""
-
     def __init__(self, image_size=128, conv_dim=64, c_dim=5, repeat_num=6):
         super(Discriminator, self).__init__()
         layers = []
@@ -79,7 +63,7 @@ class Discriminator(nn.Module):
         layers.append(nn.LeakyReLU(0.01))
 
         curr_dim = conv_dim
-        for i in range(1, repeat_num):
+        for _ in range(1, repeat_num):
             layers.append(nn.Conv2d(curr_dim, curr_dim * 2, kernel_size=4, stride=2, padding=1))
             layers.append(nn.LeakyReLU(0.01))
             curr_dim = curr_dim * 2

@@ -1,55 +1,44 @@
-'''
-dataloader.py에는 데이터 디렉터리/ 데이터셋에서 데이터를 불러오는 코드를 작성.
-별도의 작업 필요 없기 때문에 ImageFolder만으로 구현 가능.
-'''
+"""완수 작성 dataloader"""
+
 from torchvision.datasets import ImageFolder
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
-from torchvision.transforms import ToPILImage
-
-to_pil = ToPILImage()
 
 import os
-from PIL import ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-# denormalize image
-def denorm(x):
-    out = (x + 1) / 2
-    return out.clamp(0, 1)
 
-def get_loader(dataroot, crop_size, image_size, batch_size, num_workers=1):
-    print("Preparing dataloader...")
+def get_loader(rootpath, image_size, crop_size, batch_size=128, num_workers=1):
 
-    train_transform = T.Compose([
-        T.RandomHorizontalFlip(),
+    train_path = os.path.join(rootpath, 'train')
+    test_path = os.path.join(rootpath, 'test')
+
+    train_traonsform = T.Compose([
+        # TODO Augmentation 요수 추가
         T.CenterCrop(crop_size),
         T.Resize(image_size),
         T.ToTensor(),
-        T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-        ])
+        T.Normalize(mean=(0.5, 0.5, 0.5),
+                    std=(0.5, 0.5, 0.5))
+    ])
+
     test_transform = T.Compose([
         T.CenterCrop(crop_size),
         T.Resize(image_size),
         T.ToTensor(),
-        T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-        ])
+        T.Normalize(mean=(0.5, 0.5, 0.5),
+                    std=(0.5, 0.5, 0.5))
+    ])
 
-    train_path = os.path.join(dataroot, "train")
-    test_path = os.path.join(dataroot, "test")
+    train_dataset = ImageFolder(train_path, transform=train_traonsform)
+    test_dataset = ImageFolder(test_path, transform=test_transform)
 
-    train_set = ImageFolder(train_path, train_transform)
-    test_set = ImageFolder(test_path, test_transform)
-
-    train_loader = DataLoader(train_set,
+    train_loader = DataLoader(dataset=train_dataset,
                               batch_size=batch_size,
                               shuffle=True,
                               num_workers=num_workers)
-    test_loader = DataLoader(test_set,
+    test_loader = DataLoader(dataset=test_dataset,
                              batch_size=batch_size,
                              shuffle=False,
                              num_workers=num_workers)
 
-    print("Prepare dataloader completed!")
     return train_loader, test_loader
-

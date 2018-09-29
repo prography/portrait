@@ -1,6 +1,7 @@
+"""영인 작성 main"""
+
 import os
 from trainer import Trainer
-from tester import Tester
 from dataloader import get_loader
 from torch.backends import cudnn
 from config import get_config
@@ -18,17 +19,16 @@ def main(config):
         os.makedirs(config.result_dir)
 
     # our case
-    if config.dataset == 'ImageFolder':
+    if config.dataset == 'Portrait':
         train_loader, test_loader = get_loader(config.dataroot, crop_size=config.crop_size, image_size=config.image_size,
                                 batch_size=config.batch_size, num_workers=config.num_workers)
 
-    trainer = Trainer(train_loader, config)
+    trainer = Trainer(train_loader, test_loader, config)
 
     if config.mode == 'train':
         trainer.train()
-    elif config.mode == 'test' and config.trained_G != '':
-        tester = Tester(test_loader, config)
-        tester.test()
+    elif config.mode == 'test':
+        trainer.test()
 
 if __name__ == '__main__':
     config = get_config()
