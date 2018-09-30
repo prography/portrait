@@ -1,4 +1,4 @@
-"""지원 작성 trainer.py + 영인 살짝 수정"""
+"""지원 작성 trainer"""
 
 from model import Generator
 from model import Discriminator
