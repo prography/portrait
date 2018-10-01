@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 # Dataloader configruations
 parser.add_argument('--dataset', type=str, default='Portrait', help='dataset name. default=Portrait')
 parser.add_argument('--dataroot', type=str, default='dataset_origin', help='path to dataset. default=dataset')
+parser.add_argument('--tnr_transform_mode', type=int, default=0, choices=[0,1], help='mode to training transform. default=0')
 parser.add_argument('--crop_size', type=int, default=256, help='crop size for the custom ImageFolder dataset. default=256')
 parser.add_argument('--image_size', type=int, default=128, help='image resolution. default=128')
 parser.add_argument('--batch_size', type=int, default=16, help='mini-batch size. default=16')

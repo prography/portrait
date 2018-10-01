@@ -4,25 +4,42 @@ from torch.utils.data import DataLoader
 
 import os
 
-
-def get_loader(rootpath, image_size, crop_size, batch_size=128, num_workers=1):
+def get_loader(rootpath, tnr_transform_mode, image_size, crop_size, batch_size=128, num_workers=1):
 
     train_path = os.path.join(rootpath, 'train')
     test_path = os.path.join(rootpath, 'test')
 
-    train_traonsform = T.Compose([
-        # TODO Augmentation 요수 추가
-        T.CenterCrop(crop_size),
-        T.Resize(image_size),
-        T.ToTensor(),
-        T.Normalize(mean=(0.5, 0.5, 0.5),
-                    std=(0.5, 0.5, 0.5))
-    ])
+    if tnr_transform_mode == 0:
+        train_traonsform = T.Compose([
+            # data augmentation
+            # 1. random rotation
+            # 2. random horizontal flip
+            T.RandomRotation(45.0),
+            T.RandomHorizontalFlip(),
+            T.CenterCrop(crop_size),
+            T.Resize(image_size),
+            T.ToTensor(),
+            T.Normalize(mean=(0.5, 0.5, 0.5),
+                        std=(0.5, 0.5, 0.5))
+        ])
+    else:
+        train_traonsform = T.Compose([
+            # data augmentation
+            # 1. random crop
+            # 2. random vertical flip
+            T.RandomCrop(crop_size),
+            T.RandomVerticalFlip(),
+            T.CenterCrop(crop_size),
+            T.Resize(image_size),
+            T.ToTensor(),
+            T.Normalize(mean=(0.5, 0.5, 0.5),
+                        std=(0.5, 0.5, 0.5))
+        ])
 
     test_transform = T.Compose([
         T.CenterCrop(crop_size),
         T.Resize(image_size),
-        T.ToTensor()
+        T.ToTensor(),
         T.Normalize(mean=(0.5, 0.5, 0.5),
                     std=(0.5, 0.5, 0.5))
     ])

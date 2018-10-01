@@ -20,8 +20,9 @@ def main(config):
 
     # our case
     if config.dataset == 'Portrait':
-        train_loader, test_loader = get_loader(config.dataroot, crop_size=config.crop_size, image_size=config.image_size,
-                                batch_size=config.batch_size, num_workers=config.num_workers)
+        train_loader, test_loader = get_loader(config.dataroot, config.tnr_transform_mode,
+                                               crop_size=config.crop_size, image_size=config.image_size,
+                                               batch_size=config.batch_size, num_workers=config.num_workers)
 
     tnr = trainer(train_loader, test_loader, config)
 
