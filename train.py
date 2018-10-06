@@ -10,6 +10,7 @@ import time
 import datetime
 
 from vis_tool import Visualizer
+import numpy as np
 
 
 class trainer(object):
@@ -147,6 +148,8 @@ class trainer(object):
             return F.cross_entropy(logit, target)
 
     def train(self):
+        vis = Visualizer()
+
         data_loader = self.train_loader
         # Fetch fixed inputs for debugging.
         data_iter = iter(data_loader)
@@ -166,6 +169,10 @@ class trainer(object):
 
         print('Start training...')
         start_time = time.time()
+
+        g_losses = [0.]
+        d_losses = [0.]
+
         for i in range(start_iters, self.num_iters):
 
             # =================================================================================== #
@@ -218,12 +225,13 @@ class trainer(object):
             d_loss.backward()
             self.d_optimizer.step()
 
-            
             loss = {}
             loss['D/loss_real'] = d_loss_real.item()
             loss['D/loss_fake'] = d_loss_fake.item()
             loss['D/loss_cls'] = d_loss_cls.item()
             loss['D/loss_gp'] = d_loss_gp.item()
+
+            d_losses.append(d_loss.item())
             
             # =================================================================================== #
             #                               3. Train the generator                                #
@@ -250,6 +258,8 @@ class trainer(object):
                 loss['G/loss_rec'] = g_loss_rec.item()
                 loss['G/loss_cls'] = g_loss_cls.item()
 
+                g_losses.append(g_loss.item())
+
             # =================================================================================== #
             #                                 4. Miscellaneous                                    #
             # =================================================================================== #
@@ -262,9 +272,15 @@ class trainer(object):
                     log += ", {}: {:.4f}".format(tag, value)
                 print(log)
 
-                if self.use_tensorboard:
-                    for tag, value in loss.items():
-                        self.logger.scalar_summary(tag, value, i+1)
+                # if self.use_tensorboard:
+                #     for tag, value in loss.items():
+                #         self.logger.scalar_summary(tag, value, i+1)
+
+                vis.plot("Generator loss with lr=%.3f" % (self.g_lr), np.mean(g_losses))
+                vis.plot("Discriminator loss with lr=%.3f" % (self.d_lr), np.mean(d_losses))
+
+                g_losses.clear()
+                d_losses.clear()
 
             if (i+1) % self.sample_step == 0:
                 with torch.no_grad():
@@ -296,6 +312,8 @@ class trainer(object):
         torch.save(self.G.state_dict(), "%s/final_G.pth" % self.model_save_dir)
         torch.save(self.D.state_dict(), "%s/final_D.pth" % self.model_save_dir)
         print("Saving final models finished!")
+
+        vis.plot("StarGAN training completed!", 1)
 
     
     def test(self):
