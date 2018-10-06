@@ -153,6 +153,9 @@ class trainer(object):
         data_loader = self.train_loader
         # Fetch fixed inputs for debugging.
         data_iter = iter(data_loader)
+
+        print("length of dataloader:", len(data_loader))
+
         x_fixed, c_org = next(data_iter)
         x_fixed = x_fixed.to(self.device)
         c_fixed_list = self.create_labels(c_org, self.c_dim, self.dataset)
@@ -276,8 +279,8 @@ class trainer(object):
                 #     for tag, value in loss.items():
                 #         self.logger.scalar_summary(tag, value, i+1)
 
-                vis.plot("Generator loss with lr=%.3f" % (self.g_lr), np.mean(g_losses))
-                vis.plot("Discriminator loss with lr=%.3f" % (self.d_lr), np.mean(d_losses))
+                vis.plot("Generator loss with lr=%.4f" % (self.g_lr), np.mean(g_losses))
+                vis.plot("Discriminator loss with lr=%.4f" % (self.d_lr), np.mean(d_losses))
 
                 g_losses.clear()
                 d_losses.clear()
@@ -339,5 +342,3 @@ class trainer(object):
                 result_path = os.path.join(self.result_dir, '{}-images.jpg'.format(i+1))
                 save_image(self.denorm(x_concat.data.cpu()), result_path, nrow=1, padding=0)
                 print('Saved real and fake images into {}...'.format(result_path))
-
-    
