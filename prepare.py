@@ -23,7 +23,8 @@ if __name__ == '__main__':
     print("Remove %d images!" % rm_cnt)
 
     config = get_config()
-    train_loader, test_loader = get_loader('dataset_origin', crop_size=config.crop_size, image_size=config.image_size,
+    train_loader, test_loader = get_loader('dataset_origin', tnr_transform_mode=0,
+                                           crop_size=config.crop_size, image_size=config.image_size,
                                            batch_size=config.batch_size, num_workers=config.num_workers)
     log_interval = int(len(train_loader)*0.1)
     for idx, (img, cls) in enumerate(train_loader):
