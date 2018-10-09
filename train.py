@@ -1,17 +1,14 @@
 from model import Generator
 from model import Discriminator
-from torch.autograd import Variable
 from torchvision.utils import save_image
 import torch
 import torch.nn.functional as F
-import numpy as np
 import os
 import time
 import datetime
 
 from vis_tool import Visualizer
 import numpy as np
-
 
 class trainer(object):
 
@@ -22,6 +19,9 @@ class trainer(object):
         self.test_loader = test_loader
 
         self.c_dim = config.c_dim
+
+        self.mode = config.mode
+        self.cls2label = {0: 'oil', 1: 'real', 2: 'vector', 3:'water-color'}
         
         self.image_size = config.image_size
         self.g_conv_dim = config.g_conv_dim
@@ -63,6 +63,9 @@ class trainer(object):
         self.model_save_step = config.model_save_step
         self.lr_update_step = config.lr_update_step
 
+        # Setup visdom
+        self.vis = Visualizer()
+
         # Build the model and tensorboard.
         self.build_model()
         if self.use_tensorboard:
@@ -91,11 +94,18 @@ class trainer(object):
         print("The number of parameters: {}".format(num_params))
 
     def restore_model(self, resume_iters):
+        # if self.mode == 'train':
         print('Loading the trained models from step {}...'.format(resume_iters))
         G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
         D_path = os.path.join(self.model_save_dir, '{}-D.ckpt'.format(resume_iters))
         self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
         self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
+        # elif self.mode == 'test':
+        #     print('Loading the trained models from step {}...'.format(resume_iters))
+        #     G_path = os.path.join(self.model_save_dir, '{}-G.pth'.format(resume_iters))
+        #     D_path = os.path.join(self.model_save_dir, '{}-D.pth'.format(resume_iters))
+        #     self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
+        #     self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
 
     def build_tensorboard(self):
         from logger import Logger
@@ -148,8 +158,6 @@ class trainer(object):
             return F.cross_entropy(logit, target)
 
     def train(self):
-        vis = Visualizer()
-
         data_loader = self.train_loader
         # Fetch fixed inputs for debugging.
         data_iter = iter(data_loader)
@@ -275,12 +283,8 @@ class trainer(object):
                     log += ", {}: {:.4f}".format(tag, value)
                 print(log)
 
-                # if self.use_tensorboard:
-                #     for tag, value in loss.items():
-                #         self.logger.scalar_summary(tag, value, i+1)
-
-                vis.plot("Generator loss with lr=%.4f" % (self.g_lr), np.mean(g_losses))
-                vis.plot("Discriminator loss with lr=%.4f" % (self.d_lr), np.mean(d_losses))
+                self.vis.plot("Generator loss with lr=%.4f" % (self.g_lr), np.mean(g_losses))
+                self.vis.plot("Discriminator loss with lr=%.4f" % (self.d_lr), np.mean(d_losses))
 
                 g_losses.clear()
                 d_losses.clear()
@@ -294,6 +298,8 @@ class trainer(object):
                     sample_path = os.path.join(self.sample_dir, '{}-images.jpg'.format(i+1))
                     save_image(self.denorm(x_concat.data.cpu()), sample_path, nrow=1, padding=0)
                     print('Saved real and fake images into {}...'.format(sample_path))
+
+                    self.vis.img("Generated image", self.denorm(x_concat.data.cpu()))
 
             # Save model checkpoints.
             if (i+1) % self.model_save_step == 0:
@@ -316,29 +322,38 @@ class trainer(object):
         torch.save(self.D.state_dict(), "%s/final_D.pth" % self.model_save_dir)
         print("Saving final models finished!")
 
-        vis.plot("StarGAN training completed!", 1)
+        self.vis.plot("StarGAN training completed!", 1)
 
     
     def test(self):
         self.restore_model(self.test_iters)
-        
+
         # Set data loader.
         data_loader = self.test_loader
-        
+
+        # Set model eval mode
+        self.G.eval()
+        global_img_list = []
+
         with torch.no_grad():
-            for i, (x_real, c_org) in enumerate(data_loader):
+            for i, (x_reals, c_orgs) in enumerate(data_loader):
+                c_orgs = c_orgs.view(-1, 1)
+                for x_real, c_org in zip(x_reals, c_orgs):
+                    x_real.unsqueeze_(0)
 
-                # Prepare input images and target domain labels.
-                x_real = x_real.to(self.device)
-                c_trg_list = self.create_labels(c_org, self.c_dim, self.dataset)
+                    if c_org.item() == 1:
+                        x_real = x_real.to(self.device)
+                        c_trg_list = self.create_labels(c_org, self.c_dim, self.dataset)
 
-                # Translate images.
-                x_fake_list = [x_real]
-                for c_trg in c_trg_list:
-                    x_fake_list.append(self.G(x_real, c_trg))
+                        x_fake_list = [x_real]
+                        for c_trg in c_trg_list:
+                            x_fake = self.G(x_real, c_trg)
+                            x_fake_list.append(x_fake)
 
-                # Save the translated images.
-                x_concat = torch.cat(x_fake_list, dim=3)
-                result_path = os.path.join(self.result_dir, '{}-images.jpg'.format(i+1))
-                save_image(self.denorm(x_concat.data.cpu()), result_path, nrow=1, padding=0)
-                print('Saved real and fake images into {}...'.format(result_path))
+                        x_concat = torch.cat(x_fake_list, dim=3).cpu().detach().numpy()
+                        global_img_list.append(x_concat)
+
+            global_img_list = torch.from_numpy(np.asarray(global_img_list)).squeeze(1)
+            result_path = os.path.join(self.result_dir, 'test_result_iter{}.jpg'.format(self.test_iters))
+            save_image(self.denorm(global_img_list.data.cpu()), result_path, nrow=1)
+            print('Saved real and fake images into {}...'.format(result_path))
