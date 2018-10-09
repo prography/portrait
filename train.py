@@ -164,9 +164,9 @@ class trainer(object):
 
         print("length of dataloader:", len(data_loader))
 
-        x_fixed, c_org = next(data_iter)
+        x_fixed, c_org_fixed = next(data_iter)
         x_fixed = x_fixed.to(self.device)
-        c_fixed_list = self.create_labels(c_org, self.c_dim, self.dataset)
+        c_fixed_list = self.create_labels(c_org_fixed, self.c_dim, self.dataset)
 
         # Learning rate cache for decaying.
         g_lr = self.g_lr
@@ -290,16 +290,29 @@ class trainer(object):
                 d_losses.clear()
 
             if (i+1) % self.sample_step == 0:
+                global_img_list = []
                 with torch.no_grad():
-                    x_fake_list = [x_fixed]
-                    for c_fixed in c_fixed_list:
-                        x_fake_list.append(self.G(x_fixed, c_fixed))
-                    x_concat = torch.cat(x_fake_list, dim=3)
-                    sample_path = os.path.join(self.sample_dir, '{}-images.jpg'.format(i+1))
-                    save_image(self.denorm(x_concat.data.cpu()), sample_path, nrow=1, padding=0)
-                    print('Saved real and fake images into {}...'.format(sample_path))
+                    c_org_fixed = c_org_fixed.view(-1, 1)
+                    for x_real, c_org_ in zip(x_fixed, c_org_fixed):
+                        x_real.unsqueeze_(0)
 
-                    self.vis.img("Generated image", self.denorm(x_concat.data.cpu()))
+                        if c_org_.item() == 1:
+                            x_real = x_real.to(self.device)
+                            c_trg_list = self.create_labels(c_org_, self.c_dim, self.dataset)
+
+                            x_fake_list = [x_real]
+                            for c_trg in c_trg_list:
+                                x_fake = self.G(x_real, c_trg)
+                                x_fake_list.append(x_fake)
+
+                            x_concat = torch.cat(x_fake_list, dim=3).cpu().detach().numpy()
+                            global_img_list.append(x_concat)
+
+                    global_img_list = torch.from_numpy(np.asarray(global_img_list)).squeeze(1)
+                    sample_path = os.path.join(self.sample_dir, 'sample-iter{}.jpg'.format(i+1))
+                    save_image(self.denorm(global_img_list.data.cpu()), sample_path, nrow=1)
+                    print('Saved sample images into {}...'.format(sample_path))
+                    self.vis.img("Generated image", self.denorm(global_img_list.data.cpu()))
 
             # Save model checkpoints.
             if (i+1) % self.model_save_step == 0:
@@ -331,8 +344,6 @@ class trainer(object):
         # Set data loader.
         data_loader = self.test_loader
 
-        # Set model eval mode
-        self.G.eval()
         global_img_list = []
 
         with torch.no_grad():
