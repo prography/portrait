@@ -94,18 +94,16 @@ class trainer(object):
         print("The number of parameters: {}".format(num_params))
 
     def restore_model(self, resume_iters):
-        # if self.mode == 'train':
-        print('Loading the trained models from step {}...'.format(resume_iters))
-        G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
-        D_path = os.path.join(self.model_save_dir, '{}-D.ckpt'.format(resume_iters))
-        self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
-        self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
-        # elif self.mode == 'test':
-        #     print('Loading the trained models from step {}...'.format(resume_iters))
-        #     G_path = os.path.join(self.model_save_dir, '{}-G.pth'.format(resume_iters))
-        #     D_path = os.path.join(self.model_save_dir, '{}-D.pth'.format(resume_iters))
-        #     self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
-        #     self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
+        if self.mode == 'train':
+            print('Loading the trained models from step {}...'.format(resume_iters))
+            G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
+            D_path = os.path.join(self.model_save_dir, '{}-D.ckpt'.format(resume_iters))
+            self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
+            self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
+        elif self.mode == 'test':
+            print('Loading the trained models from step {}...'.format(resume_iters))
+            G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
+            self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
 
     def build_tensorboard(self):
         from logger import Logger
