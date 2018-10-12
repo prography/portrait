@@ -182,6 +182,7 @@ class trainer(object):
         g_losses = [0.]
         d_losses = [0.]
 
+
         for i in range(start_iters, self.num_iters):
 
             # =================================================================================== #
@@ -231,7 +232,8 @@ class trainer(object):
             # Backward and optimize.
             d_loss = d_loss_real + d_loss_fake + self.lambda_cls * d_loss_cls + self.lambda_gp * d_loss_gp
             self.reset_grad()
-            d_loss.backward()
+            if i%2 == 0:        # Discriminator를 2번에 한번씩만 학습
+                d_loss.backward()
             self.d_optimizer.step()
 
             loss = {}
