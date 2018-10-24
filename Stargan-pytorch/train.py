@@ -218,6 +218,9 @@ class trainer(object):
             d_loss_cls = self.classification_loss(out_cls, label_org, self.dataset)
 
             # Compute loss with fake images.
+
+            print(x_real.shape)
+            print(c_trg.shape)
             x_fake = self.G(x_real, c_trg)
             out_src, out_cls = self.D(x_fake.detach())
             d_loss_fake = torch.mean(out_src)

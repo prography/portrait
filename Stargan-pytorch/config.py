@@ -55,6 +55,9 @@ parser.add_argument('--sample_step', type=int, default=1000, help='step interval
 parser.add_argument('--model_save_step', type=int, default=10000, help='step interval for saving checkpoint. default=10000')
 parser.add_argument('--lr_update_step', type=int, default=1000, help='step interval for updating learning rate. default=1000')
 
+# Convert configurations.
+parser.add_argument('--dict_path', type=str, default='final.pth',  help='path to state_dict file for converting to Caffe2 file')
+
 def get_config():
     config = parser.parse_args()
     return config
