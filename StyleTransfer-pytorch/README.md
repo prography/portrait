@@ -36,3 +36,4 @@ Examples
 
 #### original to oilcolor style   
 ![](https://github.com/prography/portrait/blob/deep_dev/StyleTransfer-pytorch/imgs/input_004.jpg)
+<img src="https://github.com/prography/portrait/blob/deep_dev/StyleTransfer-pytorch/imgs/oil_output_004.png" width="178" height="218">
