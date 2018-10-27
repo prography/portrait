@@ -14,7 +14,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--convert_mode', type=str, required=True, choices=['vector', 'water', 'oil'])
+    parser.add_argument('--convert_mode', type=str, required=True, choices=['pop', 'water', 'oil'])
     parser.add_argument('--input_path', type=str, required=True, help='path to an image converted')
     parser.add_argument('--output_path', type=str, required=True, help='path to save converted image')
 
@@ -29,6 +29,7 @@ def convert(config):
     net = TransferNet()
     net.load_state_dict(torch.load(config.model_path, map_location=lambda storage, loc: storage))
     net = net.to(device)
+    net.eval()
 
     # open input image file
     input_img = Image.open(config.input_path)
