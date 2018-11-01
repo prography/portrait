@@ -1,17 +1,13 @@
 package com.example.user.gryeojo;
 
-import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -21,23 +17,17 @@ import android.widget.Toast;
 
 import com.example.user.gryeojo.Network.Task.ImageRequestTask;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Member;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.Random;
 
 
 public class ResultActivity extends AppCompatActivity {
+    NetworkProgressDialog networkProgressDialog;
     SharedPreferences mPref;
     Bitmap decodedBitmap;
     ImageView imageView;
@@ -52,6 +42,7 @@ public class ResultActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
+
         imageView = (ImageView)findViewById(R.id.result);
         save = findViewById(R.id.save);
 
@@ -82,17 +73,20 @@ public class ResultActivity extends AppCompatActivity {
         ImageRequestTask requestTask = new ImageRequestTask(new ImageRequestTask.ImageRequestTaskHandler() {
             @Override
             public void onSuccessTask(String result) {
+                networkProgressDialog.dismiss();
                 JsonObject jsonObject = new Gson().fromJson(result, JsonObject.class);
 
                 key = jsonObject.get("key").getAsString();
 
                 if(key.equals(firstkey)){
+
                     converImg = jsonObject.get("img").getAsString();
                     byte[] decodedString = Base64.decode(converImg, Base64.DEFAULT);
                     decodedBitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
                     imageView.setImageBitmap(decodedBitmap);
                 }
+                networkProgressDialog.show();
 
 
 
@@ -100,11 +94,13 @@ public class ResultActivity extends AppCompatActivity {
 
             @Override
             public void onFailTask() {
+                networkProgressDialog.dismiss();
                 Toast.makeText(getApplicationContext(),"서버에서 불러오는데 실패하였습니다.",Toast.LENGTH_LONG);
             }
 
             @Override
             public void onCancelTask() {
+                networkProgressDialog.dismiss();
                 Toast.makeText(getApplicationContext(),"사용자가 해당 작업을 중지하였습니다.",Toast.LENGTH_LONG);
             }
 
